@@ -1,0 +1,21 @@
+1. 数据迁移（一次性）
+	# 中国区 -> 国际区
+   npm run migrate_garmin_cn_to_global
+
+   # 国际区 -> 中国区
+   npm run migrate_garmin_global_to_cn
+
+   迁移时会从指定位置开始，迁移指定数量的活动数据。
+   建议先测试迁移少量数据，确认无误后再进行大批量迁移。
+
+
+2. 增量同步（定时任务）
+
+   # 中国区 -> 国际区 同步
+   npm run sync_cn
+
+   # 国际区 -> 中国区 同步
+	npm run sync_global
+
+   增量同步会自动检测两边服务器的最新活动，
+   只同步不存在的活动数据。

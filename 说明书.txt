@@ -1,0 +1,141 @@
+Garmin 数据同步工具说明书
+==========================
+
+一、功能简介
+-----------
+本工具用于在 Garmin 中国区和国际区服务器之间迁移和同步运动活动数据。
+
+主要功能：
+1. 中国区 -> 国际区 数据迁移（一次性迁移历史数据）
+2. 国际区 -> 中国区 数据迁移（一次性迁移历史数据）
+3. 中国区 -> 国际区 增量同步（定时同步新活动）
+4. 国际区 -> 中国区 增量同步（定时同步新活动）
+
+
+二、账号配置（必须）
+-------------------
+
+有两种配置方式：.env 文件 或 GitHub Secrets
+
+方式一：.env 文件（本地运行）
+在项目根目录创建 .env 文件：
+
+# Garmin 账号（中国区）- 必须
+GARMIN_USERNAME=your_email@qq.com
+GARMIN_PASSWORD=your_password
+
+# Garmin 账号（国际区）- 必须
+GARMIN_GLOBAL_USERNAME=your_global_email
+GARMIN_GLOBAL_PASSWORD=your_global_password
+
+# 通知配置（可选，用于推送失败通知）
+BARK_KEY=your_bark_key
+
+# 数据库加密密钥（可选，默认值已提供）
+AESKEY=your_aes_key
+
+
+方式二：GitHub Secrets（GitHub Actions 定时运行）
+进入仓库 Settings -> Secrets and variables -> Actions，
+添加以下 Secrets：
+
+GARMIN_USERNAME      # 中国区账号邮箱
+GARMIN_PASSWORD      # 中国区账号密码
+GARMIN_GLOBAL_USERNAME   # 国际区账号邮箱
+GARMIN_GLOBAL_PASSWORD   # 国际区账号密码
+BARK_KEY            # Bark 通知 Key（可选）
+
+
+三、可选配置
+-----------
+
+# 迁移数量配置（可选）
+GARMIN_MIGRATE_NUM=100      # 每次迁移的数量，默认 769
+GARMIN_MIGRATE_START=0      # 迁移起始位置，默认 0
+
+# 同步配置（可选）
+GARMIN_SYNC_NUM=10          # 每次同步检查的最新数量，默认 10
+
+
+四、使用方法
+-----------
+
+1. 数据迁移（一次性）
+
+   # 中国区 -> 国际区
+   npm run migrate_garmin_cn_to_global
+
+   # 国际区 -> 中国区
+   npm run migrate_garmin_global_to_cn
+
+   迁移时会从指定位置开始，迁移指定数量的活动数据。
+   建议先测试迁移少量数据，确认无误后再进行大批量迁移。
+
+
+2. 增量同步（定时任务）
+
+   # 中国区 -> 国际区 同步
+   npm run sync_cn
+
+   # 国际区 -> 中国区 同步
+   npm run sync_global
+
+   增量同步会自动检测两边服务器的最新活动，
+   只同步不存在的活动数据。
+
+
+五、GitHub Actions 配置
+----------------------
+
+1. Fork 本仓库
+
+2. 添加 Secrets（见上文"账号配置"）
+
+3. 启用 Workflow：
+   - 迁移：运行 .github/workflows/migrate_*.yml
+   - 同步：运行 .github/workflows/sync_*.yml
+
+4. 配置定时任务：
+   编辑 .github/workflows/*.yml 文件中的 cron 表达式
+
+
+六、Docker 部署
+--------------
+
+1. 构建镜像：
+   docker build -t garmin-sync .
+
+2. 运行容器：
+   docker-compose up -d
+
+
+七、注意事项
+-----------
+
+1. 账号安全：请勿将账号密码提交到公开仓库，
+   使用 GitHub Secrets 或 .env 文件配置。
+
+2. API 限制：Garmin 对 API 调用频率有限制，
+   代码中已添加适当的延迟以避免被封禁。
+
+3. 数据安全：Session 信息会加密存储在本地 SQLite 数据库中。
+
+4. 首次使用：建议先使用少量数据进行测试，
+   确认功能正常后再进行正式迁移。
+
+5. 双向同步：如果需要双向同步，请分别配置两个同步任务，
+   并注意避免循环同步。
+
+
+八、常见问题
+-----------
+
+Q: 迁移/同步失败怎么办？
+A: 检查日志输出，确认账号密码是否正确，网络是否正常。
+   可以查看 GitHub Actions 的运行日志获取详细信息。
+
+Q: 如何重新迁移？
+A: 修改 GARMIN_MIGRATE_START 环境变量从之前的位置继续。
+
+Q: Session 过期怎么办？
+A: 程序会自动检测并尝试重新登录，如果失败会提示错误。
